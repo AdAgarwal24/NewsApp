@@ -31,6 +31,66 @@ export class News extends Component {
     document.title = `NexNews - ${this.props.category.charAt(0).toUpperCase() + this.props.category.slice(1)} News`;
   }
 
+  isLocalDevelopment = () => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
+    return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+  }
+
+  getLocalNewsApiKey = () => {
+    return process.env.REACT_APP_NEWS_API_KEY || '';
+  }
+
+  buildNewsEndpoint = (page) => {
+    const params = new URLSearchParams({
+      category: this.props.category,
+      country: this.props.country,
+      page: String(page),
+      pageSize: String(this.props.pageSize)
+    });
+
+    if (this.isLocalDevelopment()) {
+      const apiKey = this.getLocalNewsApiKey();
+
+      if (!apiKey) {
+        throw new Error('Missing REACT_APP_NEWS_API_KEY in local .env file');
+      }
+
+      const fromDate = new Date();
+      fromDate.setDate(fromDate.getDate() - 7);
+
+      const localParams = new URLSearchParams({
+        q: `(india OR indian) AND (${this.props.category})`,
+        searchIn: 'title,description',
+        sortBy: 'publishedAt',
+        language: 'en',
+        from: fromDate.toISOString(),
+        apiKey,
+        page: String(page),
+        pageSize: String(this.props.pageSize)
+      });
+
+      return `https://newsapi.org/v2/everything?${localParams.toString()}`;
+    }
+
+    return `/api/news?${params.toString()}`;
+  }
+
+  parseJsonResponse = async (response) => {
+    const contentType = response.headers.get('content-type') || '';
+
+    if (!contentType.includes('application/json')) {
+      const text = await response.text();
+      throw new Error(
+        `Unexpected response from news endpoint. ${text.slice(0, 120)}`
+      );
+    }
+
+    return response.json();
+  }
+
   fetchIndiaNews = async (page) => {
     const cacheKey = `${this.props.category}-${page}-${this.props.pageSize}`;
     const cachedData = newsCache.get(cacheKey);
@@ -47,20 +107,12 @@ export class News extends Component {
       return;
     }
 
-    const params = new URLSearchParams({
-      category: this.props.category,
-      country: this.props.country,
-      page: String(page),
-      pageSize: String(this.props.pageSize)
-    });
-
-    const url = `/api/news?${params.toString()}`;
-
     this.setState({ loading: true, loadingMore: false, error: null });
 
     try {
+      const url = this.buildNewsEndpoint(page);
       const data = await fetch(url);
-      const parsedData = await data.json();
+      const parsedData = await this.parseJsonResponse(data);
 
       if (!data.ok || parsedData.status === 'error') {
         throw new Error(parsedData.message || 'Unable to load news right now.');
@@ -142,20 +194,12 @@ export class News extends Component {
       return;
     }
 
-    const params = new URLSearchParams({
-      category: this.props.category,
-      country: this.props.country,
-      page: String(nextPage),
-      pageSize: String(this.props.pageSize)
-    });
-
-    const url = `/api/news?${params.toString()}`;
-
     this.setState({ loadingMore: true, error: null });
 
     try {
+      const url = this.buildNewsEndpoint(nextPage);
       const data = await fetch(url);
-      const parsedData = await data.json();
+      const parsedData = await this.parseJsonResponse(data);
 
       if (!data.ok || parsedData.status === 'error') {
         throw new Error(parsedData.message || 'Unable to load more news right now.');
