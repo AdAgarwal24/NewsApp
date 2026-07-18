@@ -31,20 +31,6 @@ export class News extends Component {
     document.title = `NexNews - ${this.props.category.charAt(0).toUpperCase() + this.props.category.slice(1)} News`;
   }
 
-  getCategoryQuery = () => {
-    const queryMap = {
-      general: '(india OR indian)',
-      business: '(india OR indian) AND (business OR economy OR markets OR startup OR finance)',
-      entertainment: '(india OR indian) AND (entertainment OR movie OR cinema OR celebrity OR music)',
-      health: '(india OR indian) AND (health OR medical OR hospital OR wellness OR healthcare)',
-      science: '(india OR indian) AND (science OR research OR space OR climate OR innovation)',
-      sports: '(india OR indian) AND (sports OR cricket OR football OR olympics OR athlete)',
-      technology: '(india OR indian) AND (technology OR tech OR ai OR startup OR gadgets OR software)'
-    };
-
-    return queryMap[this.props.category] || queryMap.general;
-  }
-
   fetchIndiaNews = async (page) => {
     const cacheKey = `${this.props.category}-${page}-${this.props.pageSize}`;
     const cachedData = newsCache.get(cacheKey);
@@ -61,21 +47,14 @@ export class News extends Component {
       return;
     }
 
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - 7);
-
     const params = new URLSearchParams({
-      q: this.getCategoryQuery(),
-      searchIn: 'title,description',
-      sortBy: 'publishedAt',
-      language: 'en',
-      from: fromDate.toISOString(),
-      apiKey: '8de564aceb5546f1ae4779d05d0715b7',
+      category: this.props.category,
+      country: this.props.country,
       page: String(page),
       pageSize: String(this.props.pageSize)
     });
 
-    const url = `https://newsapi.org/v2/everything?${params.toString()}`;
+    const url = `/api/news?${params.toString()}`;
 
     this.setState({ loading: true, loadingMore: false, error: null });
 
@@ -92,16 +71,12 @@ export class News extends Component {
 
       if (articles.length === 0 && this.props.category !== 'general') {
         const fallbackParams = new URLSearchParams({
-          q: '(india OR indian)',
-          searchIn: 'title,description',
-          sortBy: 'publishedAt',
-          language: 'en',
-          from: fromDate.toISOString(),
-          apiKey: '8de564aceb5546f1ae4779d05d0715b7',
+          category: 'general',
+          country: this.props.country,
           page: String(page),
           pageSize: String(this.props.pageSize)
         });
-        const fallbackUrl = `https://newsapi.org/v2/everything?${fallbackParams.toString()}`;
+        const fallbackUrl = `/api/news?${fallbackParams.toString()}`;
         const fallbackData = await fetch(fallbackUrl);
         const fallbackParsedData = await fallbackData.json();
 
@@ -167,21 +142,14 @@ export class News extends Component {
       return;
     }
 
-    const fromDate = new Date();
-    fromDate.setDate(fromDate.getDate() - 7);
-
     const params = new URLSearchParams({
-      q: this.getCategoryQuery(),
-      searchIn: 'title,description',
-      sortBy: 'publishedAt',
-      language: 'en',
-      from: fromDate.toISOString(),
-      apiKey: '8de564aceb5546f1ae4779d05d0715b7',
+      category: this.props.category,
+      country: this.props.country,
       page: String(nextPage),
       pageSize: String(this.props.pageSize)
     });
 
-    const url = `https://newsapi.org/v2/everything?${params.toString()}`;
+    const url = `/api/news?${params.toString()}`;
 
     this.setState({ loadingMore: true, error: null });
 
