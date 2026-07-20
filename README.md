@@ -1,4 +1,12 @@
-# Getting Started with Create React App
+# NexNews
+
+NexNews is a responsive React news app that shows category-based headlines, infinite scroll, theme toggle support, and India-focused news browsing.
+
+## Live Demo
+
+Open the deployed app here: [https://nexnewsnewsapp.vercel.app](https://nexnewsnewsapp.vercel.app)
+
+## Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
