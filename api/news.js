@@ -16,17 +16,32 @@ export default async function handler(req, res) {
   const category = (req.query.category || 'general').toString();
   const page = Number(req.query.page || 1);
   const pageSize = Number(req.query.pageSize || 5);
-  const country = (req.query.country || 'in').toString();
+
+  const queryMap = {
+    general: '(india OR indian)',
+    business: '(india OR indian) AND (business OR economy OR markets OR startup OR finance)',
+    entertainment: '(india OR indian) AND (entertainment OR movie OR cinema OR celebrity OR music)',
+    health: '(india OR indian) AND (health OR medical OR hospital OR wellness OR healthcare)',
+    science: '(india OR indian) AND (science OR research OR space OR climate OR innovation)',
+    sports: '(india OR indian) AND (sports OR cricket OR football OR olympics OR athlete)',
+    technology: '(india OR indian) AND (technology OR tech OR ai OR startup OR gadgets OR software)'
+  };
+
+  const fromDate = new Date();
+  fromDate.setDate(fromDate.getDate() - 7);
 
   const params = new URLSearchParams({
-    country,
-    category,
+    q: queryMap[category] || queryMap.general,
+    searchIn: 'title,description',
+    sortBy: 'publishedAt',
+    language: 'en',
+    from: fromDate.toISOString(),
     page: String(page),
     pageSize: String(pageSize),
     apiKey
   });
 
-  const response = await fetch(`https://newsapi.org/v2/top-headlines?${params.toString()}`);
+  const response = await fetch(`https://newsapi.org/v2/everything?${params.toString()}`);
   const data = await response.json();
 
   if (!response.ok) {
